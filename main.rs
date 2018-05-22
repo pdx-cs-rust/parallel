@@ -6,23 +6,36 @@ use self::rand::random;
 
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
-fn make_rands(n: usize) -> Vec<Vec<f64>> {
-    let mut result = Vec::new();
-    for _ in 0..n {
-        let block: Vec<f64> =
-            (0..BLOCKSIZE).map(|_| random() ).collect();
-        result.push(block);
-    }
-    result
+fn make_rands() -> Vec<f64> {
+    (0..BLOCKSIZE).map(|_| random() ).collect()
 }
 
 fn sequential(n: usize) {
-    let rands = make_rands(n);
-    for i in 0..n {
-        println!("{:?}", randstats(&rands[i]));
+    for _ in 0..n {
+        let rands = make_rands();
+        println!("{:?}", randstats(&rands));
+    }
+}
+
+fn fork_join(n: usize) {
+    let mut tids = Vec::new();
+    for _ in 0..n {
+        let tid = std::thread::spawn(|| {
+            let rands = make_rands();
+            randstats(&rands)
+        });
+        tids.push(tid);
+    }
+    for tid in tids {
+        println!("{:?}", tid.join().unwrap());
     }
 }
 
 fn main() {
-    sequential(8);
+    let args: Vec<String> = std::env::args().collect();
+    match args[1].as_str() {
+        "sequential" => sequential(8),
+        "fork_join" => fork_join(8),
+        _ => panic!("unknown method"),
+    }
 }
