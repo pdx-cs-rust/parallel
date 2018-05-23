@@ -11,6 +11,9 @@ use self::rand::random;
 
 use std::sync::Arc;
 
+extern crate rayon;
+use self::rayon::prelude::*;
+
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
 fn make_rands() -> Vec<f64> {
@@ -53,12 +56,30 @@ fn arc(n: usize) {
     }
 }
 
+fn rayon(n: usize) {
+    let inits: Vec<()> = (0..n).map(|_| ()).collect();
+    let blocks: Vec<Vec<f64>> = inits
+        .par_iter()
+        .map(|()| {
+            make_rands()
+        })
+        .collect();
+    let results: Vec<(f64, f64)> = blocks
+        .par_iter()
+        .map(|block| randstats(block))
+        .collect();
+    for r in &results {
+        println!("{:?}", *r);
+    }
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args[1].as_str() {
         "sequential" => sequential(8),
         "fork_join" => fork_join(8),
         "arc" => arc(8),
+        "rayon" => rayon(8),
         _ => panic!("unknown method"),
     }
 }
