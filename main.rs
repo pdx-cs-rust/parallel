@@ -14,7 +14,7 @@ use std::sync::Arc;
 extern crate rayon;
 use self::rayon::prelude::*;
 
-use std::sync::mpsc::channel;
+use std::sync::mpsc::{channel, Receiver};
 
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
@@ -101,6 +101,46 @@ fn demo_channel(n: usize) {
     }
 }
 
+fn sequential_pipeline(n: usize) {
+    let mut rands = make_rands();
+    for _ in 0..n {
+        let more_rands = make_rands();
+        for i in 0..rands.len() {
+            // Cannot use std::cmp::max() on floats.
+            rands[i] = rands[i].max(more_rands[i]);
+        }
+        println!("{:?}", randstats(&rands));
+    }
+}
+
+fn pipeline(n: usize) {
+    let mut tids = Vec::new();
+    let mut this_receive: Option<Receiver<_>> = None;
+    for j in 0..n {
+        let (send, next_receive) = channel();
+        let tid = std::thread::spawn(move || {
+            let mut rands =
+                match this_receive {
+                    None => make_rands(),
+                    Some(receive) => receive.recv().unwrap(),
+                };
+            let more_rands = make_rands();
+            for i in 0..rands.len() {
+                rands[i] = rands[i].max(more_rands[i]);
+            }
+            println!("{:?}", randstats(&rands));
+            if j < n - 1 {
+                send.send(rands).unwrap();
+            }
+        });
+        tids.push(tid);
+        this_receive = Some(next_receive);
+    }
+    for tid in tids {
+        tid.join().unwrap();
+    }
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args[1].as_str() {
@@ -109,6 +149,8 @@ fn main() {
         "arc" => arc(8),
         "rayon" => rayon(8),
         "channel" => demo_channel(8),
+        "sequential_pipeline" => sequential_pipeline(8),
+        "pipeline" => pipeline(8),
         _ => panic!("unknown method"),
     }
 }
