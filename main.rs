@@ -59,19 +59,16 @@ fn arc(n: usize) {
 }
 
 fn rayon(n: usize) {
-    let inits: Vec<()> = (0..n).map(|_| ()).collect();
-    let blocks: Vec<Vec<f64>> = inits
+    let inits: Vec<usize> = (0..n).collect();
+    let results: Vec<(usize, (f64, f64))> = inits
         .par_iter()
-        .map(|()| {
-            make_rands()
+        .map(|i| {
+            let block = make_rands();
+            (*i, randstats(&block))
         })
         .collect();
-    let results: Vec<(f64, f64)> = blocks
-        .par_iter()
-        .map(|block| randstats(block))
-        .collect();
-    for r in &results {
-        println!("{:?}", *r);
+    for (i, r) in &results {
+        println!("{} {:?}", *i, *r);
     }
 }
 
