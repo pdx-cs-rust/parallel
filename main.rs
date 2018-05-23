@@ -14,6 +14,8 @@ use std::sync::Arc;
 extern crate rayon;
 use self::rayon::prelude::*;
 
+use std::sync::mpsc::channel;
+
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
 fn make_rands() -> Vec<f64> {
@@ -73,6 +75,32 @@ fn rayon(n: usize) {
     }
 }
 
+fn demo_channel(n: usize) {
+    let mut tids = Vec::new();
+    {
+        // Need send to be dropped so that the channel will
+        // be closed.
+        let (send, receive) = channel();
+        let tid = std::thread::spawn(move || {
+            for v in receive {
+                println!("{:?}", v);
+            }
+        });
+        tids.push(tid);
+        for _ in 0..n {
+            let this_send = send.clone();
+            let tid = std::thread::spawn(move || {
+                let rands = make_rands();
+                this_send.send(randstats(&rands)).unwrap();
+            });
+            tids.push(tid);
+        }
+    }
+    for tid in tids {
+        tid.join().unwrap();
+    }
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args[1].as_str() {
@@ -80,6 +108,7 @@ fn main() {
         "fork_join" => fork_join(8),
         "arc" => arc(8),
         "rayon" => rayon(8),
+        "channel" => demo_channel(8),
         _ => panic!("unknown method"),
     }
 }
