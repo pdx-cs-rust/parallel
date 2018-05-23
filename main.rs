@@ -143,14 +143,19 @@ fn pipeline(n: usize) {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    let n: usize = if args.len() == 3 {
+        args[2].parse().unwrap()
+    } else {
+        8
+    };
     match args[1].as_str() {
-        "sequential" => sequential(8),
-        "fork_join" => fork_join(8),
-        "arc" => arc(8),
-        "rayon" => rayon(8),
-        "channel" => demo_channel(8),
-        "sequential_pipeline" => sequential_pipeline(8),
-        "pipeline" => pipeline(8),
+        "sequential" => sequential(n),
+        "fork_join" => fork_join(n),
+        "arc" => arc(n),
+        "rayon" => rayon(n),
+        "channel" => demo_channel(n),
+        "sequential_pipeline" => sequential_pipeline(n),
+        "pipeline" => pipeline(n),
         _ => panic!("unknown method"),
     }
 }
