@@ -15,6 +15,6 @@ pub fn randstats(randblock: &[f64]) -> (f64, f64) {
         let diff = *v - mean;
         var += diff * diff;
     }
-    var /= blocksize * blocksize;
+    var /= blocksize;
     (mean, var)
 }

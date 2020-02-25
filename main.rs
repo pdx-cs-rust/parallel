@@ -6,13 +6,11 @@
 mod randstat;
 use randstat::randstats;
 
-extern crate rand;
-use self::rand::random;
+use rand::random;
 
 use std::sync::Arc;
 
-extern crate rayon;
-use self::rayon::prelude::*;
+use rayon::prelude::*;
 
 use std::sync::mpsc::{channel, Receiver};
 
