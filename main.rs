@@ -3,8 +3,8 @@
 // Please see the file LICENSE in the source
 // distribution of this software for license terms.
 
-mod randstat;
-use randstat::randstats;
+mod stats;
+use stats::stats;
 
 use rand::random;
 
@@ -23,7 +23,7 @@ fn make_rands() -> Vec<f64> {
 fn sequential(n: usize) {
     for _ in 0..n {
         let rands = make_rands();
-        println!("{:?}", randstats(&rands));
+        println!("{:?}", stats(&rands));
     }
 }
 
@@ -32,7 +32,7 @@ fn fork_join(n: usize) {
     for _ in 0..n {
         let tid = std::thread::spawn(|| {
             let rands = make_rands();
-            randstats(&rands)
+            stats(&rands)
         });
         tids.push(tid);
     }
@@ -46,7 +46,7 @@ fn arc(n: usize) {
     let mut tids = Vec::new();
     for _ in 0..n {
         let this_rands = rands.clone();
-        let tid = std::thread::spawn(move || randstats(&this_rands));
+        let tid = std::thread::spawn(move || stats(&this_rands));
         tids.push(tid);
     }
     for tid in tids {
@@ -57,7 +57,7 @@ fn arc(n: usize) {
 fn rayon(n: usize) {
     let inits: Vec<()> = (0..n).map(|_| ()).collect();
     let blocks: Vec<Vec<f64>> = inits.par_iter().map(|()| make_rands()).collect();
-    let results: Vec<(f64, f64)> = blocks.par_iter().map(|block| randstats(block)).collect();
+    let results: Vec<(f64, f64)> = blocks.par_iter().map(|block| stats(block)).collect();
     for r in &results {
         println!("{:?}", *r);
     }
@@ -79,7 +79,7 @@ fn demo_channel(n: usize) {
             let this_send = send.clone();
             let tid = std::thread::spawn(move || {
                 let rands = make_rands();
-                this_send.send(randstats(&rands)).unwrap();
+                this_send.send(stats(&rands)).unwrap();
             });
             tids.push(tid);
         }
@@ -97,7 +97,7 @@ fn sequential_pipeline(n: usize) {
             // Cannot use std::cmp::max() on floats.
             rands[i] = rands[i].max(more_rands[i]);
         }
-        println!("{:?}", randstats(&rands));
+        println!("{:?}", stats(&rands));
     }
 }
 
@@ -115,7 +115,7 @@ fn pipeline(n: usize) {
             for i in 0..rands.len() {
                 rands[i] = rands[i].max(more_rands[i]);
             }
-            println!("{:?}", randstats(&rands));
+            println!("{:?}", stats(&rands));
             if j < n - 1 {
                 send.send(rands).unwrap();
             }

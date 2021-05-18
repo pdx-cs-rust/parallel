@@ -3,15 +3,16 @@
 // Please see the file LICENSE in the source
 // distribution of this software for license terms.
 
-pub fn randstats(randblock: &[f64]) -> (f64, f64) {
+/// Return the mean and variance of the given block.
+pub fn stats(block: &[f64]) -> (f64, f64) {
     let mut mean = 0.0;
-    for v in randblock {
+    for v in block {
         mean += *v;
     }
-    let blocksize = randblock.len() as f64;
+    let blocksize = block.len() as f64;
     mean /= blocksize;
     let mut var = 0.0;
-    for v in randblock {
+    for v in block {
         let diff = *v - mean;
         var += diff * diff;
     }
