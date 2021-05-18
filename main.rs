@@ -17,7 +17,7 @@ use std::sync::mpsc::{channel, Receiver};
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
 fn make_rands() -> Vec<f64> {
-    (0..BLOCKSIZE).map(|_| random() ).collect()
+    (0..BLOCKSIZE).map(|_| random()).collect()
 }
 
 fn sequential(n: usize) {
@@ -46,9 +46,7 @@ fn arc(n: usize) {
     let mut tids = Vec::new();
     for _ in 0..n {
         let this_rands = rands.clone();
-        let tid = std::thread::spawn(move || {
-            randstats(&this_rands)
-        });
+        let tid = std::thread::spawn(move || randstats(&this_rands));
         tids.push(tid);
     }
     for tid in tids {
@@ -58,16 +56,8 @@ fn arc(n: usize) {
 
 fn rayon(n: usize) {
     let inits: Vec<()> = (0..n).map(|_| ()).collect();
-    let blocks: Vec<Vec<f64>> = inits
-        .par_iter()
-        .map(|()| {
-            make_rands()
-        })
-        .collect();
-    let results: Vec<(f64, f64)> = blocks
-        .par_iter()
-        .map(|block| randstats(block))
-        .collect();
+    let blocks: Vec<Vec<f64>> = inits.par_iter().map(|()| make_rands()).collect();
+    let results: Vec<(f64, f64)> = blocks.par_iter().map(|block| randstats(block)).collect();
     for r in &results {
         println!("{:?}", *r);
     }
@@ -117,11 +107,10 @@ fn pipeline(n: usize) {
     for j in 0..n {
         let (send, next_receive) = channel();
         let tid = std::thread::spawn(move || {
-            let mut rands =
-                match this_receive {
-                    None => make_rands(),
-                    Some(receive) => receive.recv().unwrap(),
-                };
+            let mut rands = match this_receive {
+                None => make_rands(),
+                Some(receive) => receive.recv().unwrap(),
+            };
             let more_rands = make_rands();
             for i in 0..rands.len() {
                 rands[i] = rands[i].max(more_rands[i]);
