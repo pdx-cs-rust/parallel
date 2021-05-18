@@ -14,17 +14,18 @@ use rand::{rngs::SmallRng, Rng, SeedableRng};
 use rayon::prelude::*;
 
 lazy_static! {
-    // XXX Note that because of the Mutex this design turns out
-    // to have poor performance.
     static ref RNG: Mutex<SmallRng> = Mutex::new(SmallRng::from_entropy());
 }
 
 /// We will work with blocks of data of this size.
-const BLOCKSIZE: usize = 10 * 1024 * 1024;
+const BLOCKSIZE: usize = 100 * 1024 * 1024;
 
 /// Make a block of random floats.
 fn make_rands() -> Vec<f64> {
-    let mut rng = RNG.lock().unwrap();
+    let mut rng = {
+        let mut rng = RNG.lock().unwrap();
+        SmallRng::from_seed(rng.gen())
+    };
     (0..BLOCKSIZE).map(|_| rng.gen()).collect()
 }
 
