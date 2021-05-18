@@ -6,20 +6,26 @@
 mod stats;
 use stats::stats;
 
-use rand::random;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{channel, Receiver};
 
-use std::sync::Arc;
-
+use lazy_static::lazy_static;
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 use rayon::prelude::*;
 
-use std::sync::mpsc::{channel, Receiver};
+lazy_static! {
+    // XXX Note that because of the Mutex this design turns out
+    // to have poor performance.
+    static ref RNG: Mutex<SmallRng> = Mutex::new(SmallRng::from_entropy());
+}
 
 /// We will work with blocks of data of this size.
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
 /// Make a block of random floats.
 fn make_rands() -> Vec<f64> {
-    (0..BLOCKSIZE).map(|_| random()).collect()
+    let mut rng = RNG.lock().unwrap();
+    (0..BLOCKSIZE).map(|_| rng.gen()).collect()
 }
 
 /// Generate and do stats for `n` blocks sequentially.

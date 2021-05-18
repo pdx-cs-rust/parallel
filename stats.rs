@@ -5,6 +5,7 @@
 
 /// Return the mean and variance of the given block.
 pub fn stats(block: &[f64]) -> (f64, f64) {
+    assert!(block.len() > 0);
     let mut mean = 0.0;
     for v in block {
         mean += *v;

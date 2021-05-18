@@ -10,8 +10,12 @@ authors = ["Bart Massey <bart@cs.pdx.edu>"]
 edition = "2018"
 
 [dependencies]
-rand = "0.4"
-rayon = "*"
+lazy_static = "1.4"
+rayon = "1.5"
+
+[dependencies.rand]
+version = "0.8"
+features = ["small_rng"]
 
 [[bin]]
 name = "parallel"
