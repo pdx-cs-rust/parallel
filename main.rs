@@ -14,12 +14,15 @@ use rayon::prelude::*;
 
 use std::sync::mpsc::{channel, Receiver};
 
+/// We will work with blocks of data of this size.
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
+/// Make a block of random floats.
 fn make_rands() -> Vec<f64> {
     (0..BLOCKSIZE).map(|_| random()).collect()
 }
 
+/// Generate and do stats for `n` blocks sequentially.
 fn sequential(n: usize) {
     for _ in 0..n {
         let rands = make_rands();
@@ -27,6 +30,8 @@ fn sequential(n: usize) {
     }
 }
 
+/// Generate and do stats for `n` blocks in `n` separate threads.
+/// Communicate stats using `thread::join()`.
 fn fork_join(n: usize) {
     let mut tids = Vec::new();
     for _ in 0..n {
@@ -41,6 +46,8 @@ fn fork_join(n: usize) {
     }
 }
 
+/// Generate and do stats for a single block `n` times in `n` separate threads.  Share the block
+/// readonly via an `Arc`. Communicate stats using `thread::join()`.
 fn arc(n: usize) {
     let rands = Arc::new(make_rands());
     let mut tids = Vec::new();
@@ -54,6 +61,7 @@ fn arc(n: usize) {
     }
 }
 
+/// Generate and save `n` blocks, then generate the stats for each block using `rayon` iterators.
 fn rayon(n: usize) {
     let inits: Vec<()> = (0..n).map(|_| ()).collect();
     let blocks: Vec<Vec<f64>> = inits.par_iter().map(|()| make_rands()).collect();
@@ -63,6 +71,8 @@ fn rayon(n: usize) {
     }
 }
 
+/// Generate and do stats for `n` blocks in `n` separate threads. Make the
+/// threads communicate stat results via an `mpsc::channel`.
 fn demo_channel(n: usize) {
     let mut tids = Vec::new();
     {
@@ -89,18 +99,24 @@ fn demo_channel(n: usize) {
     }
 }
 
+/// Make a random block *b*. Then make `n` more random blocks and update
+/// each element *e* of *b* with the maximum of *e* and the corresponding
+/// element of the new block. Thus, at the end *b* will contain the
+/// maximum of `n`+1 randomly-generated values.
 fn sequential_pipeline(n: usize) {
     let mut rands = make_rands();
     for _ in 0..n {
         let more_rands = make_rands();
         for i in 0..rands.len() {
-            // Cannot use std::cmp::max() on floats.
             rands[i] = rands[i].max(more_rands[i]);
         }
         println!("{:?}", stats(&rands));
     }
 }
 
+/// Make a random block *b*. Then move it through an `n`-stage pipeline. At each stage, make each
+/// element *e* of *b* be the maximum of *e* and a new random value. After the final stage, *b*
+/// will contain the maximum of `n`+1 randomly-generated values.
 fn pipeline(n: usize) {
     let mut tids = Vec::new();
     let mut this_receive: Option<Receiver<_>> = None;
