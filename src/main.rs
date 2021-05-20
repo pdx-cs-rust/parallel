@@ -20,7 +20,7 @@ lazy_static! {
 }
 
 /// We will work with blocks of data of this size.
-const BLOCKSIZE: usize = 1 * 1024 * 1024;
+const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
 /// Make a block of random floats.
 fn make_rands() -> Vec<f64> {
