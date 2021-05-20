@@ -3,30 +3,29 @@
 // Please see the file LICENSE in the source
 // distribution of this software for license terms.
 
+mod frandom;
 mod stats;
-use stats::stats;
 
-use std::sync::{Arc, Mutex};
+use stats::stats;
+use frandom::*;
+
+use std::sync::Arc;
 use std::sync::mpsc::{channel, Receiver};
 
 use lazy_static::lazy_static;
-use rand::{rngs::SmallRng, Rng, SeedableRng};
 use rayon::prelude::*;
 
 lazy_static! {
-    static ref RNG: Mutex<SmallRng> = Mutex::new(SmallRng::from_entropy());
+    static ref RNG: GlobalRng = GlobalRng::new(GlobalRng::STD_SEED);
 }
 
 /// We will work with blocks of data of this size.
-const BLOCKSIZE: usize = 100 * 1024 * 1024;
+const BLOCKSIZE: usize = 1 * 1024 * 1024;
 
 /// Make a block of random floats.
 fn make_rands() -> Vec<f64> {
-    let mut rng = {
-        let mut rng = RNG.lock().unwrap();
-        SmallRng::from_seed(rng.gen())
-    };
-    (0..BLOCKSIZE).map(|_| rng.gen()).collect()
+    let mut rng = LocalRng::new(&RNG);
+    (0..BLOCKSIZE).map(|_| rng.frandom()).collect()
 }
 
 /// Generate and do stats for `n` blocks sequentially.
@@ -156,7 +155,7 @@ fn main() {
     let n: usize = if args.len() == 3 {
         args[2].parse().unwrap()
     } else {
-        8
+        10
     };
     match args[1].as_str() {
         "sequential" => sequential(n),

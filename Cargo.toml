@@ -13,10 +13,6 @@ edition = "2018"
 lazy_static = "1.4"
 rayon = "1.5"
 
-[dependencies.rand]
-version = "0.8"
-features = ["small_rng"]
-
 [[bin]]
 name = "parallel"
 path = "main.rs"
