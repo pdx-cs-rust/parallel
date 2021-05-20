@@ -12,19 +12,16 @@ use frandom::*;
 use std::sync::Arc;
 use std::sync::mpsc::{channel, Receiver};
 
-use lazy_static::lazy_static;
 use rayon::prelude::*;
 
-lazy_static! {
-    static ref RNG: GlobalRng = GlobalRng::new(GlobalRng::STD_SEED);
-}
+static RNG: GlobalRng = GlobalRng::new();
 
 /// We will work with blocks of data of this size.
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
 /// Make a block of random floats.
 fn make_rands() -> Vec<f64> {
-    let mut rng = LocalRng::new(&RNG);
+    let mut rng = RNG.local_rng();
     (0..BLOCKSIZE).map(|_| rng.frandom()).collect()
 }
 

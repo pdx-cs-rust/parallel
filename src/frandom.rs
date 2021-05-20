@@ -10,12 +10,30 @@ use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
 
 pub struct GlobalRng(AtomicU64);
 
+pub struct LocalRng(u64);
+
+fn next_rand(n: u64) -> u64 {
+    n
+        .wrapping_mul(2862933555777941757u64)
+        .wrapping_add(3037000493u64)
+}
+
 impl GlobalRng {
     pub const STD_SEED: u64 = 0x123456789abcdef0;
 
-    /// Make a new global RNG.
-    pub fn new(seed: u64) -> Self {
+    /// Make a new global rng with the given seed.
+    pub const fn from_seed(seed: u64) -> Self {
         Self(AtomicU64::new(seed))
+    }
+
+    /// Make a new global rng.
+    pub const fn new() -> Self {
+        Self::from_seed(Self::STD_SEED)
+    }
+
+    /// Make a new local rng seeded from this global rng.
+    pub fn local_rng(&self) -> LocalRng {
+        LocalRng::from_seed(self.random() ^ self.random())
     }
 
     /// Produce a pseudo-random integer. Will likely be slow in
@@ -23,9 +41,7 @@ impl GlobalRng {
     pub fn random(&self) -> u64 {
         loop {
             let current = self.0.load(SeqCst);
-            let new = current
-                .wrapping_mul(2862933555777941757u64)
-                .wrapping_add(3037000493u64);
+            let new = next_rand(current);
             if self.0.compare_exchange(current, new, SeqCst, SeqCst).is_ok() {
                 return new;
             }
@@ -33,9 +49,15 @@ impl GlobalRng {
     }
 }
 
+impl Default for GlobalRng {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[test]
 fn test_global_rng() {
-    let rng = GlobalRng::new(GlobalRng::STD_SEED);
+    let rng = GlobalRng::new();
     let mut last = 0;
     for _ in 0..100 {
         let cur = rng.random();
@@ -44,20 +66,16 @@ fn test_global_rng() {
     }
 }
 
-pub struct LocalRng(u64);
-
 impl LocalRng {
-    /// Produce a new local rng seeded from the global rng.
-    pub fn new(global: &GlobalRng) -> Self {
-        Self(global.random())
+    /// Produce a new local rng with the given seed.
+    pub fn from_seed(seed: u64) -> Self {
+        Self(seed)
     }
 
     /// Produce a pseudo-random u64.
     pub fn random(&mut self) -> u64 {
         let old = self.0;
-        self.0 = self.0
-            .wrapping_mul(2862933555777941757u64)
-            .wrapping_add(3037000493u64);
+        self.0 = next_rand(old);
         old
     }
 
@@ -69,8 +87,8 @@ impl LocalRng {
 
 #[test]
 fn test_local_rng() {
-    let rng = GlobalRng::new(GlobalRng::STD_SEED);
-    let mut rng = LocalRng::new(&rng);
+    let rng = GlobalRng::new();
+    let mut rng = rng.local_rng();
     let mut last = 0.0;
     for _ in 0..100 {
         let cur = rng.frandom();
