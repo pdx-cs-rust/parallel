@@ -69,7 +69,7 @@ fn arc(n: usize) {
 
 /// Generate and save `n` blocks, then generate the stats for each block using `rayon` iterators.
 fn rayon(n: usize) {
-    let inits: Vec<()> = (0..n).map(|_| ()).collect();
+    let inits: Vec<()> = std::iter::repeat(()).take(n).collect();
     let blocks: Vec<Vec<f64>> = inits.par_iter().map(|()| make_rands()).collect();
     let results: Vec<(f64, f64)> = blocks.par_iter().map(|block| stats(block)).collect();
     for r in &results {
