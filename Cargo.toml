@@ -12,7 +12,3 @@ edition = "2018"
 [dependencies]
 lazy_static = "1.4"
 rayon = "1.5"
-
-[[bin]]
-name = "parallel"
-path = "main.rs"
