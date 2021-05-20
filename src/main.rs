@@ -81,24 +81,19 @@ fn rayon(n: usize) {
 /// threads communicate stat results via an `mpsc::channel`.
 fn demo_channel(n: usize) {
     let mut tids = Vec::new();
-    {
-        // Need send to be dropped so that the channel will
-        // be closed.
-        let (send, receive) = channel();
+    let (send, receive) = channel();
+    for _ in 0..n {
+        let this_send = send.clone();
         let tid = std::thread::spawn(move || {
-            for v in receive {
-                println!("{:?}", v);
-            }
+            let rands = make_rands();
+            this_send.send(stats(&rands)).unwrap();
         });
         tids.push(tid);
-        for _ in 0..n {
-            let this_send = send.clone();
-            let tid = std::thread::spawn(move || {
-                let rands = make_rands();
-                this_send.send(stats(&rands)).unwrap();
-            });
-            tids.push(tid);
-        }
+    }
+    // Need last send to be dropped so that the channel will be closed.
+    drop(send);
+    for v in receive {
+        println!("{:?}", v);
     }
     for tid in tids {
         tid.join().unwrap();
