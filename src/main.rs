@@ -3,26 +3,22 @@
 // Please see the file LICENSE in the source
 // distribution of this software for license terms.
 
-mod frandom;
 mod stats;
 
 use stats::stats;
-use frandom::*;
 
 use std::sync::Arc;
 use std::sync::mpsc::{channel, Receiver};
 
 use rayon::prelude::*;
-
-static RNG: GlobalRng = GlobalRng::new();
+extern crate fastrand;
 
 /// We will work with blocks of data of this size.
 const BLOCKSIZE: usize = 10 * 1024 * 1024;
 
 /// Make a block of random floats.
 fn make_rands() -> Vec<f64> {
-    let mut rng = RNG.local_rng();
-    (0..BLOCKSIZE).map(|_| rng.frandom()).collect()
+    (0..BLOCKSIZE).map(|_| fastrand::f64()).collect()
 }
 
 /// Generate and do stats for `n` blocks sequentially.

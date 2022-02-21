@@ -10,4 +10,5 @@ authors = ["Bart Massey <bart@cs.pdx.edu>"]
 edition = "2018"
 
 [dependencies]
+fastrand = "1.7"
 rayon = "1.5"
