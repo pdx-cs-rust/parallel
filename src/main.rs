@@ -42,8 +42,7 @@ fn fork_join(b: usize, n: usize) {
     }
 }
 
-/// Generate and do stats for a single block `n` times in `n` separate threads.  Share the block
-/// readonly via an `Arc`. Communicate stats using `thread::join()`.
+/// Generate and do stats for a single block `n` times in `n` separate threads./// readonly via an `Arc`. Communicate stats using `thread::join()`.
 fn arc(b: usize, n: usize) {
     let rands = Arc::new(make_rands(b));
     let mut tids = Vec::new();
