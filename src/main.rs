@@ -8,7 +8,7 @@ mod stats;
 use stats::stats;
 
 use std::sync::Arc;
-use std::sync::mpsc::{channel, Receiver};
+use std::sync::mpsc::{sync_channel, Receiver};
 
 use rayon::prelude::*;
 extern crate fastrand;
@@ -70,7 +70,7 @@ fn rayon(b: usize, n: usize) {
 /// threads communicate stat results via an `mpsc::channel`.
 fn demo_channel(b: usize, n: usize) {
     let mut tids = Vec::new();
-    let (send, receive) = channel();
+    let (send, receive) = sync_channel(0);
     for _ in 0..n {
         let this_send = send.clone();
         let tid = std::thread::spawn(move || {
@@ -111,7 +111,7 @@ fn pipeline(b: usize, n: usize) {
     let mut tids = Vec::new();
     let mut this_receive: Option<Receiver<_>> = None;
     for j in 0..n {
-        let (send, next_receive) = channel();
+        let (send, next_receive) = sync_channel(1);
         let tid = std::thread::spawn(move || {
             let mut rands = match this_receive {
                 None => make_rands(b),
